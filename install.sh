@@ -9,8 +9,8 @@ echo "Installing SoloSpace extension ($EXT_UUID)..."
 mkdir -p "$EXT_DIR"
 
 # Copy files
-cp solospace@denhafiz.github.com/metadata.json "$EXT_DIR/"
-cp solospace@denhafiz.github.com/extension.js "$EXT_DIR/"
+cp metadata.json "$EXT_DIR/"
+cp extension.js "$EXT_DIR/"
 
 # Enable the extension
 gnome-extensions enable "$EXT_UUID"
