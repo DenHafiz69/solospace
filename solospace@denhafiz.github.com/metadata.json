@@ -1,0 +1,7 @@
+{
+  "name": "SoloSpace",
+  "description": "Automatically opens every new application window on its own dedicated workspace, similar to macOS full-screen apps.",
+  "uuid": "solospace@denhafiz.github.com",
+  "shell-version": ["45", "46", "47", "50"],
+  "url": ""
+}
