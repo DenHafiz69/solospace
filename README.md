@@ -1,17 +1,28 @@
 # SoloSpace
 
-SoloSpace is a GNOME Shell extension that automatically opens every new application window on its own dedicated workspace. This provides a focused, single-tasking experience similar to macOS full-screen apps.
+![SoloSpace Banner](assets/banner.png)
+
+SoloSpace is a premium GNOME Shell extension designed for ultimate focus. It automatically manages your workspaces by ensuring every new application window opens in its own dedicated space, providing a seamless single-tasking environment reminiscent of macOS full-screen apps.
 
 ## ✨ Features
 
-- **Automatic Isolation**: Every new window is moved to an empty workspace.
-- **Dynamic Workspace Creation**: If no empty workspaces are available, a new one is created automatically.
-- **Auto-Activation**: The new workspace is activated immediately so you can start working right away.
-- **Minimalist**: Lightweight and does not interfere with your existing workflow.
+- 🎯 **Automatic Isolation**: Every new window is intelligently moved to an empty workspace.
+- 🚀 **Dynamic Management**: Creates new workspaces on-the-fly as needed.
+- ⚡ **Instant Activation**: Automatically switches focus to the new workspace so you can start working immediately.
+- 🛠 **Customizable Placement**: Choose whether new windows open in a brand new workspace or adjacent to your current one.
+- 🎨 **GNOME Native**: Built with Adwaita and GSettings for a perfectly integrated experience.
+
+## 📸 Screenshots
+
+### Customization at your fingertips
+![SoloSpace Settings](assets/settings.png)
+*Fine-tune how SoloSpace handles your windows through the extension settings.*
 
 ## 🚀 Installation
 
-### Using the install script
+### Quick Install (Recommended)
+
+The easiest way to install SoloSpace is via the included installation script:
 
 1. Clone the repository:
    ```bash
@@ -21,6 +32,7 @@ SoloSpace is a GNOME Shell extension that automatically opens every new applicat
 
 2. Run the installation script:
    ```bash
+   chmod +x install.sh
    ./install.sh
    ```
 
@@ -30,25 +42,43 @@ SoloSpace is a GNOME Shell extension that automatically opens every new applicat
 
 ### Manual Installation
 
+If you prefer to install manually:
+
 1. Create the extension directory:
    ```bash
    mkdir -p ~/.local/share/gnome-shell/extensions/solospace@denhafiz.github.com
    ```
 
-2. Copy the files:
+2. Copy the extension files:
    ```bash
-   cp extension.js metadata.json ~/.local/share/gnome-shell/extensions/solospace@denhafiz.github.com/
+   cp extension.js metadata.json prefs.js -r schemas ~/.local/share/gnome-shell/extensions/solospace@denhafiz.github.com/
    ```
 
-3. Enable the extension:
+3. Compile the schemas:
+   ```bash
+   glib-compile-schemas ~/.local/share/gnome-shell/extensions/solospace@denhafiz.github.com/schemas/
+   ```
+
+4. Enable the extension:
    ```bash
    gnome-extensions enable solospace@denhafiz.github.com
    ```
 
 ## 🛠 Compatibility
 
-Supported GNOME versions:
-- GNOME 45
-- GNOME 46
-- GNOME 47
-- GNOME 50
+SoloSpace is compatible with modern GNOME Shell versions:
+
+| GNOME Version | Status |
+| :--- | :--- |
+| **GNOME 45** | ✅ Supported |
+| **GNOME 46** | ✅ Supported |
+| **GNOME 47** | ✅ Supported |
+| **GNOME 50** | ✅ Supported |
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to open issues or submit pull requests to improve SoloSpace.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
