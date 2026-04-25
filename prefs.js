@@ -23,14 +23,13 @@ export default class SoloSpacePreferences extends ExtensionPreferences {
             }),
         });
 
-        // Bind the 'selected' property of the ComboRow to the 'window-position' setting
-        // Since our enum values match the indices 0, 1, 2, this works directly.
-        settings.bind(
-            'window-position',
-            row,
-            'selected',
-            Gio.SettingsBindFlags.DEFAULT
-        );
+        // Bind the 'selected' property manually since Adw.ComboRow:selected is a guint
+        // and GSettings enum bindings expect a gint. settings.bind silently fails.
+        row.selected = settings.get_enum('window-position');
+
+        row.connect('notify::selected', () => {
+            settings.set_enum('window-position', row.selected);
+        });
 
         group.add(row);
         window.add(page);
