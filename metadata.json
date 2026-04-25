@@ -8,5 +8,6 @@
     "47",
     "50"
   ],
+  "settings-schema": "org.gnome.shell.extensions.solospace",
   "url": ""
 }

@@ -11,6 +11,12 @@ mkdir -p "$EXT_DIR"
 # Copy files
 cp metadata.json "$EXT_DIR/"
 cp extension.js "$EXT_DIR/"
+cp prefs.js "$EXT_DIR/"
+
+# Copy schemas
+mkdir -p "$EXT_DIR/schemas"
+cp schemas/*.xml "$EXT_DIR/schemas/"
+glib-compile-schemas "$EXT_DIR/schemas/"
 
 # Enable the extension
 gnome-extensions enable "$EXT_UUID"
