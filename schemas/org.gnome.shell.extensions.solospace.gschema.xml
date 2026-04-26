@@ -10,5 +10,10 @@
       <summary>New window position</summary>
       <description>Where to place newly created windows.</description>
     </key>
+    <key name="fill-empty-space" type="b">
+      <default>false</default>
+      <summary>Fill empty half of split workspace</summary>
+      <description>When a window occupies only half the workspace, place new windows in the empty half instead of a new workspace.</description>
+    </key>
   </schema>
 </schemalist>

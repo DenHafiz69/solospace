@@ -32,6 +32,16 @@ export default class SoloSpacePreferences extends ExtensionPreferences {
         });
 
         group.add(row);
+
+        // Fill Empty Space toggle
+        const fillRow = new Adw.SwitchRow({
+            title: 'Fill Empty Half-Space',
+            subtitle: 'If the current workspace has a half-width window, place new windows in the empty half instead of a new workspace',
+        });
+
+        settings.bind('fill-empty-space', fillRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+
+        group.add(fillRow);
         window.add(page);
     }
 }
