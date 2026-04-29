@@ -11,7 +11,7 @@ export default class SoloSpacePreferences extends ExtensionPreferences {
         const page = new Adw.PreferencesPage();
         const group = new Adw.PreferencesGroup({
             title: 'General Settings',
-            description: 'Configure how SoloSpace manages new windows',
+            description: 'Configure how Solo Space manages new windows',
         });
         page.add(group);
 

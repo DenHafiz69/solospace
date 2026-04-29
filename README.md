@@ -1,8 +1,8 @@
-# SoloSpace
+# Solo Space
 
 ![SoloSpace Banner](assets/banner.png)
 
-SoloSpace is a premium GNOME Shell extension designed for ultimate focus. It automatically manages your workspaces by ensuring every new application window opens in its own dedicated space, providing a seamless single-tasking environment reminiscent of macOS full-screen apps.
+Solo Space is a premium GNOME Shell extension designed for ultimate focus. It automatically manages your workspaces by ensuring every new application window opens in its own dedicated space, providing a seamless single-tasking environment reminiscent of macOS full-screen apps.
 
 ## ✨ Features
 
@@ -16,13 +16,13 @@ SoloSpace is a premium GNOME Shell extension designed for ultimate focus. It aut
 
 ### Customization at your fingertips
 ![SoloSpace Settings](assets/settings.png)
-*Fine-tune how SoloSpace handles your windows through the extension settings.*
+*Fine-tune how Solo Space handles your windows through the extension settings.*
 
 ## 🚀 Installation
 
 ### Quick Install (Recommended)
 
-The easiest way to install SoloSpace is via the included installation script:
+The easiest way to install Solo Space is via the included installation script:
 
 1. Clone the repository:
    ```bash
@@ -66,7 +66,7 @@ If you prefer to install manually:
 
 ## 🛠 Compatibility
 
-SoloSpace is compatible with modern GNOME Shell versions:
+Solo Space is compatible with modern GNOME Shell versions:
 
 | GNOME Version | Status |
 | :--- | :--- |
@@ -77,7 +77,7 @@ SoloSpace is compatible with modern GNOME Shell versions:
 
 ## 🤝 Contributing
 
-Contributions are welcome! Feel free to open issues or submit pull requests to improve SoloSpace.
+Contributions are welcome! Feel free to open issues or submit pull requests to improve Solo Space.
 
 ## 📄 License
 

@@ -3,7 +3,7 @@
 EXT_UUID="solospace@denhafiz.github.com"
 EXT_DIR="$HOME/.local/share/gnome-shell/extensions/$EXT_UUID"
 
-echo "Installing SoloSpace extension ($EXT_UUID)..."
+echo "Installing Solo Space extension ($EXT_UUID)..."
 
 # Create extension directory
 mkdir -p "$EXT_DIR"
@@ -21,7 +21,7 @@ glib-compile-schemas "$EXT_DIR/schemas/"
 # Enable the extension
 gnome-extensions enable "$EXT_UUID"
 
-echo "SoloSpace extension installed and enabled successfully!"
+echo "Solo Space extension installed and enabled successfully!"
 echo "--------------------------------------------------------"
 echo "IMPORTANT: To apply the extension, you must restart GNOME Shell."
 echo "If you are on Wayland (default on Arch), please LOG OUT and LOG BACK IN."
