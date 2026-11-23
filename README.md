@@ -1,87 +1,74 @@
 # Solo Space
 
-![SoloSpace Banner](assets/banner.png)
+A GNOME Shell extension that automatically places every new application window on its own dedicated workspace, similar to macOS full-screen apps.
 
-Solo Space is a premium GNOME Shell extension designed for ultimate focus. It automatically manages your workspaces by ensuring every new application window opens in its own dedicated space, providing a seamless single-tasking environment reminiscent of macOS full-screen apps.
+## Features
 
-## ✨ Features
+- **Automatic Workspace Isolation**: Moves newly opened normal windows to an empty workspace and switches to it automatically.
+- **Flexible Placement**: Open new windows on the first available empty workspace, to the right of the current workspace, or to the left. Keeps the window in place if the current workspace is already empty.
+- **Fill Empty Half-Space**: Optionally tiles a new window into the open half of the current workspace when a single half-width window is already present on that monitor.
+- **Auto-Maximize**: Optionally maximizes new windows placed on a solo workspace.
+- **Smart Filtering**: Ignores dialogs, transient popups, attached dialogs, sticky windows, and taskbar-skipped helpers. Includes a customizable `WM_CLASS` exclusion list in preferences (defaulting to clipboard/utility tools like `xclip`, `xsel`, `wl-copy`, `wl-clipboard`, `xdotool`).
+- **Multi-Monitor Aware**: Respects GNOME's *Workspaces on primary display only* setting and evaluates half-tiling per monitor.
 
-- 🎯 **Automatic Isolation**: Every new window is intelligently moved to an empty workspace.
-- 🚀 **Dynamic Management**: Creates new workspaces on-the-fly as needed.
-- ⚡ **Instant Activation**: Automatically switches focus to the new workspace so you can start working immediately.
-- 🛠 **Customizable Placement**: Choose whether new windows open in a brand new workspace or adjacent to your current one.
-- 🎨 **GNOME Native**: Built with Adwaita and GSettings for a perfectly integrated experience.
+## Requirements
 
-## 📸 Screenshots
+- GNOME Shell **45–51**
+- `glib-compile-schemas` (from `glib2`)
+- `curl` and `tar` (for the one-line installer)
 
-### Customization at your fingertips
-![SoloSpace Settings](assets/settings.png)
-*Fine-tune how Solo Space handles your windows through the extension settings.*
+## Installation
 
-## 🚀 Installation
+### Quick Install (`curl`)
 
-### Quick Install (Recommended)
+```bash
+TMP=$(mktemp -d) && \
+curl -fsSL https://github.com/DenHafiz69/solospace/archive/refs/heads/master.tar.gz | tar -xz -C "$TMP" && \
+(cd "$TMP/solospace-master" && bash install.sh) && \
+rm -rf "$TMP"
+```
 
-The easiest way to install Solo Space is via the included installation script:
+### From Source (`git`)
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/DenHafiz69/solospace.git
-   cd solospace
-   ```
+```bash
+git clone https://github.com/DenHafiz69/solospace.git
+cd solospace
+./install.sh
+```
 
-2. Run the installation script:
-   ```bash
-   chmod +x install.sh
-   ./install.sh
-   ```
+### Activate
 
-3. **Restart GNOME Shell**:
-   - **Wayland**: Log out and log back in.
-   - **X11**: Press `Alt+F2`, type `r`, and press `Enter`.
+Restart GNOME Shell after installing:
+- **Wayland**: Log out and log back in.
+- **X11**: Press `Alt+F2`, type `r`, and press `Enter`.
 
-### Manual Installation
+Then ensure the extension is enabled:
 
-If you prefer to install manually:
+```bash
+gnome-extensions enable solospace@denhafiz.my
+```
 
-1. Create the extension directory:
-   ```bash
-   mkdir -p ~/.local/share/gnome-shell/extensions/solospace@denhafiz.my
-   ```
+## Configuration
 
-2. Copy the extension files:
-   ```bash
-   cp extension.js metadata.json prefs.js -r schemas ~/.local/share/gnome-shell/extensions/solospace@denhafiz.my/
-   ```
+Open the extension settings via the **Extensions** app or run:
 
-3. Compile the schemas:
-   ```bash
-   glib-compile-schemas ~/.local/share/gnome-shell/extensions/solospace@denhafiz.my/schemas/
-   ```
+```bash
+gnome-extensions prefs solospace@denhafiz.my
+```
 
-4. Enable the extension:
-   ```bash
-   gnome-extensions enable solospace@denhafiz.my
-   ```
+Available options:
+- **New Window Position**: `New Workspace (Default)`, `To the Right`, or `To the Left`.
+- **Fill Empty Half-Space**: Tile new windows alongside an existing half-width window instead of opening a new workspace.
+- **Auto-Maximize New Windows**: Automatically maximize new solo windows.
+- **Excluded Apps**: Comma-separated `WM_CLASS` substrings to keep on the current workspace.
 
-## 🛠 Compatibility
+## Uninstall
 
-Solo Space is compatible with modern GNOME Shell versions:
+```bash
+gnome-extensions disable solospace@denhafiz.my
+rm -rf ~/.local/share/gnome-shell/extensions/solospace@denhafiz.my
+```
 
-| GNOME Version | Status |
-| :--- | :--- |
-| **GNOME 45** | ✅ Supported |
-| **GNOME 46** | ✅ Supported |
-| **GNOME 47** | ✅ Supported |
-| **GNOME 48** | ✅ Supported |
-| **GNOME 49** | ✅ Supported |
-| **GNOME 50** | ✅ Supported |
-| **GNOME 51** | ✅ Supported |
+## License
 
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests to improve Solo Space.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
