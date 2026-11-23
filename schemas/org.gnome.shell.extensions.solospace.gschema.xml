@@ -15,5 +15,15 @@
       <summary>Fill empty half of split workspace</summary>
       <description>When a window occupies only half the workspace, place new windows in the empty half instead of a new workspace.</description>
     </key>
+    <key name="auto-maximize" type="b">
+      <default>false</default>
+      <summary>Auto-maximize new solo windows</summary>
+      <description>Automatically maximize new windows when placed on their own dedicated workspace.</description>
+    </key>
+    <key name="excluded-apps" type="as">
+      <default>['xclip', 'xsel', 'wl-copy', 'wl-clipboard', 'xdotool']</default>
+      <summary>Excluded applications</summary>
+      <description>List of WM_CLASS or instance name substrings excluded from workspace management.</description>
+    </key>
   </schema>
 </schemalist>

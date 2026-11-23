@@ -1,19 +1,16 @@
 import Meta from 'gi://Meta';
 import GLib from 'gi://GLib';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 export default class SoloSpaceExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
         this._pendingWindows = new Map();
+        this._pendingTiles = new Map();
 
         this._windowCreatedId = global.display.connect('window-created', (display, window) => {
-            // Early-exit checks that are reliable at creation time
-            if (window.window_type !== Meta.WindowType.NORMAL) {
-                return;
-            }
-
-            if (window.is_skip_taskbar()) {
+            if (this._shouldIgnoreWindow(window)) {
                 return;
             }
 
@@ -23,6 +20,20 @@ export default class SoloSpaceExtension extends Extension {
             // (e.g. xclip spawned by Helix's space+y) from real app windows.
             this._deferWindowHandling(window);
         });
+    }
+
+    /**
+     * Returns true for non-normal, taskbar-skipped, transient/dialog, or sticky windows
+     * that should remain on their current workspace.
+     */
+    _shouldIgnoreWindow(window) {
+        if (!window) return true;
+        if (window.window_type !== Meta.WindowType.NORMAL) return true;
+        if (window.is_skip_taskbar()) return true;
+        if (window.get_transient_for() !== null) return true;
+        if (window.is_attached_dialog()) return true;
+        if (window.is_on_all_workspaces()) return true;
+        return false;
     }
 
     /**
@@ -60,8 +71,8 @@ export default class SoloSpaceExtension extends Extension {
         const handleWindow = () => {
             finish();
 
-            // Re-check skip_taskbar since it may have changed since creation
-            if (window.is_skip_taskbar()) {
+            // Re-check properties since they may have changed since creation
+            if (this._shouldIgnoreWindow(window)) {
                 return;
             }
 
@@ -71,7 +82,6 @@ export default class SoloSpaceExtension extends Extension {
         };
 
         const cancelWindow = () => {
-            // Window was destroyed before we could handle it — do nothing
             finish();
         };
 
@@ -96,7 +106,7 @@ export default class SoloSpaceExtension extends Extension {
 
         // Timeout fallback in case WM_CLASS is never set (some rare windows)
         cleanup.timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 250, () => {
-            cleanup.timeoutId = null; // Already fired, don't try to source_remove
+            cleanup.timeoutId = null;
             handleWindow();
             return GLib.SOURCE_REMOVE;
         });
@@ -106,130 +116,162 @@ export default class SoloSpaceExtension extends Extension {
     }
 
     /**
-     * Checks if a window belongs to a known clipboard or utility helper
-     * that should not trigger workspace management.
+     * Checks if a window matches any user-configured exclusion pattern.
      */
     _isBlacklistedWindow(window) {
         const wmClass = (window.get_wm_class() || '').toLowerCase();
         const wmInstance = (window.get_wm_class_instance() || '').toLowerCase();
+        const excludedApps = this._settings.get_strv('excluded-apps');
 
-        const BLACKLIST = [
-            'xclip',
-            'xsel',
-            'wl-copy',
-            'wl-clipboard',
-            'xdotool',
-        ];
+        return excludedApps.some(raw => {
+            const name = raw.trim().toLowerCase();
+            return name.length > 0 && (wmClass.includes(name) || wmInstance.includes(name));
+        });
+    }
 
-        if (BLACKLIST.some(name => wmClass.includes(name) || wmInstance.includes(name))) {
+    /**
+     * Returns normal, non-taskbar-skipped windows on a workspace (optionally filtered by monitor),
+     * excluding `excludeWindow`.
+     */
+    _getOtherNormalWindows(workspace, excludeWindow, monitorIndex = null) {
+        return workspace.list_windows().filter(w => {
+            if (w === excludeWindow) return false;
+            if (w.window_type !== Meta.WindowType.NORMAL) return false;
+            if (w.is_skip_taskbar()) return false;
+            if (monitorIndex !== null && w.get_monitor() !== monitorIndex) return false;
             return true;
-        }
+        });
+    }
 
-        return false;
+    /**
+     * Version-safe maximize/unmaximize helpers across GNOME Shell 45-51.
+     */
+    _maximizeWindow(window) {
+        if (!window.can_maximize()) return;
+        if (window.maximize.length > 0) {
+            window.maximize(Meta.MaximizeFlags.BOTH);
+        } else {
+            window.maximize();
+        }
+    }
+
+    _unmaximizeWindow(window) {
+        if (window.unmaximize.length > 0) {
+            window.unmaximize(Meta.MaximizeFlags.BOTH);
+        } else {
+            window.unmaximize();
+        }
     }
 
     /**
      * Handles workspace management for a confirmed application window.
-     * Contains the core logic previously inline in the window-created handler.
      */
     _handleNewWindow(window) {
         const workspaceManager = global.workspace_manager;
         const position = this._settings.get_string('window-position');
         const fillEmptySpace = this._settings.get_boolean('fill-empty-space');
+        const autoMaximize = this._settings.get_boolean('auto-maximize');
+        const windowMonitor = window.get_monitor();
 
         // Check if Fill Empty Space is enabled and there is a half-tiled window
-        // on the active workspace before applying the normal position logic.
+        // on the same monitor of the active workspace before moving workspaces.
         if (fillEmptySpace) {
             const activeWs = workspaceManager.get_active_workspace();
             const halfInfo = this._getHalfTiledInfo(activeWs, window);
 
             if (halfInfo) {
-                // Tile the new window to the empty half on the same workspace
                 this._tileToEmptyHalf(window, halfInfo);
                 return;
             }
         }
 
+        // Respect GNOME's "workspaces on primary display only" setting:
+        // don't switch/create workspaces when a window opens on a secondary monitor.
+        if (Meta.prefs_get_workspaces_only_on_primary() &&
+            windowMonitor !== Main.layoutManager.primaryIndex) {
+            return;
+        }
+
+        const monitorFilter = Meta.prefs_get_workspaces_only_on_primary()
+            ? Main.layoutManager.primaryIndex
+            : null;
+
+        const activeWs = workspaceManager.get_active_workspace();
+        const activeOtherWindows = this._getOtherNormalWindows(activeWs, window, monitorFilter);
+
         if (position === 'new-workspace') {
-            // Default behavior: Find a workspace that is currently empty of normal windows
+            // Find a workspace that is currently empty of normal windows
             let emptyWorkspace = null;
-            
-            for (let i = 0; i < workspaceManager.n_workspaces; i++) {
-                let ws = workspaceManager.get_workspace_by_index(i);
-                
-                // Get all windows on this workspace that are NOT the new window
-                let normalWindows = ws.list_windows().filter(w => {
-                    return w !== window &&
-                           w.window_type === Meta.WindowType.NORMAL && 
-                           !w.is_skip_taskbar();
-                });
-                
-                if (normalWindows.length === 0) {
-                    emptyWorkspace = ws;
-                    break;
+
+            // Prefer staying on the active workspace if it is already empty
+            if (activeOtherWindows.length === 0) {
+                emptyWorkspace = activeWs;
+            } else {
+                for (let i = 0; i < workspaceManager.n_workspaces; i++) {
+                    const ws = workspaceManager.get_workspace_by_index(i);
+                    if (this._getOtherNormalWindows(ws, window, monitorFilter).length === 0) {
+                        emptyWorkspace = ws;
+                        break;
+                    }
                 }
             }
-            
-            // If we found an empty workspace, move the window there
+
             if (emptyWorkspace) {
-                window.change_workspace(emptyWorkspace);
-                emptyWorkspace.activate(global.get_current_time());
+                if (emptyWorkspace !== activeWs) {
+                    window.change_workspace(emptyWorkspace);
+                    emptyWorkspace.activate(global.get_current_time());
+                }
             } else {
-                // If there is no empty workspace, we append a new one
                 workspaceManager.append_new_workspace(false, global.get_current_time());
-                let newWsIndex = workspaceManager.n_workspaces - 1;
-                let newWs = workspaceManager.get_workspace_by_index(newWsIndex);
-                
+                const newWs = workspaceManager.get_workspace_by_index(workspaceManager.n_workspaces - 1);
                 window.change_workspace(newWs);
                 newWs.activate(global.get_current_time());
             }
         } else {
             // "To the Right" or "To the Left"
-            const activeWs = workspaceManager.get_active_workspace();
-            const activeIndex = activeWs.index();
-            
-            // Always create a new workspace for these options
-            workspaceManager.append_new_workspace(false, global.get_current_time());
-            const newWsIndex = workspaceManager.n_workspaces - 1;
-            const newWs = workspaceManager.get_workspace_by_index(newWsIndex);
-            
-            // Move window to the new workspace first
-            window.change_workspace(newWs);
-            
-            // Reorder the workspace
-            if (position === 'right') {
-                workspaceManager.reorder_workspace(newWs, activeIndex + 1);
-            } else if (position === 'left') {
-                workspaceManager.reorder_workspace(newWs, activeIndex);
+            // If the current workspace is already empty, keep the new window here
+            // instead of leaving an unused empty workspace behind.
+            if (activeOtherWindows.length > 0) {
+                const activeIndex = activeWs.index();
+
+                workspaceManager.append_new_workspace(false, global.get_current_time());
+                const newWs = workspaceManager.get_workspace_by_index(workspaceManager.n_workspaces - 1);
+
+                window.change_workspace(newWs);
+
+                if (position === 'right') {
+                    workspaceManager.reorder_workspace(newWs, activeIndex + 1);
+                } else if (position === 'left') {
+                    workspaceManager.reorder_workspace(newWs, activeIndex);
+                }
+
+                newWs.activate(global.get_current_time());
             }
-            
-            // Activate the new workspace
-            newWs.activate(global.get_current_time());
+        }
+
+        if (autoMaximize) {
+            this._maximizeWindow(window);
         }
     }
 
     /**
-     * Checks whether there is exactly one normal window on the workspace that
-     * occupies roughly half the monitor width (left or right half).
+     * Checks whether there is exactly one normal window on the same monitor of the workspace
+     * that occupies roughly half the monitor width (left or right half).
      *
      * Returns an object { monitor, side: 'left'|'right', workArea } when a
      * half-tiled window is found, or null otherwise.
      */
     _getHalfTiledInfo(workspace, newWindow) {
-        const normalWindows = workspace.list_windows().filter(w => {
-            return w !== newWindow &&
-                   w.window_type === Meta.WindowType.NORMAL &&
-                   !w.is_skip_taskbar();
-        });
+        const targetMonitor = newWindow.get_monitor();
+        const normalWindows = this._getOtherNormalWindows(workspace, newWindow, targetMonitor);
 
-        // We only act when there is exactly one window on the workspace
+        // We only act when there is exactly one other window on this monitor
         if (normalWindows.length !== 1) {
             return null;
         }
 
         const existing = normalWindows[0];
-        const monitorIndex = existing.get_monitor();
-        const workArea = workspace.get_work_area_for_monitor(monitorIndex);
+        const workArea = workspace.get_work_area_for_monitor(targetMonitor);
         const frame = existing.get_frame_rect();
 
         const halfW = workArea.width / 2;
@@ -244,7 +286,6 @@ export default class SoloSpaceExtension extends Extension {
             return null;
         }
 
-        // Determine which side the existing window is on
         const leftEdge = workArea.x;
         const midPoint = workArea.x + halfW;
 
@@ -252,18 +293,19 @@ export default class SoloSpaceExtension extends Extension {
         const isOnRight = Math.abs(frame.x - midPoint) <= tolerance;
 
         if (isOnLeft) {
-            return { monitor: monitorIndex, side: 'right', workArea };
+            return { monitor: targetMonitor, side: 'right', workArea };
         } else if (isOnRight) {
-            return { monitor: monitorIndex, side: 'left', workArea };
+            return { monitor: targetMonitor, side: 'left', workArea };
         }
 
         return null;
     }
 
     /**
-     * Moves and resizes the new window to fill the specified empty half.
+     * Moves and resizes the new window to fill the specified empty half,
+     * tracking the timeout so it is cancelled if the window closes or the extension disables.
      */
-    _tileToEmptyHalf(window, { monitor, side, workArea }) {
+    _tileToEmptyHalf(window, { side, workArea }) {
         const halfW = Math.floor(workArea.width / 2);
 
         const x = side === 'left' ? workArea.x : workArea.x + halfW;
@@ -271,14 +313,43 @@ export default class SoloSpaceExtension extends Extension {
         const w = side === 'left' ? halfW : workArea.width - halfW;
         const h = workArea.height;
 
-        // Un-maximize first so move_resize_frame works reliably
-        window.unmaximize(Meta.MaximizeFlags.BOTH);
+        // Cancel any previous pending tile for this window
+        this._cancelPendingTile(window);
 
-        // Use GLib timeout to let the window finish its initial map before resizing
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-            window.move_resize_frame(false, x, y, w, h);
+        // Un-maximize first so move_resize_frame works reliably
+        this._unmaximizeWindow(window);
+
+        const tileEntry = { timeoutId: null, unmanagedId: null };
+
+        tileEntry.unmanagedId = window.connect('unmanaged', () => {
+            this._cancelPendingTile(window);
+        });
+
+        tileEntry.timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+            tileEntry.timeoutId = null;
+            this._cancelPendingTile(window);
+            if (window.get_compositor_private()) {
+                window.move_resize_frame(false, x, y, w, h);
+            }
             return GLib.SOURCE_REMOVE;
         });
+
+        this._pendingTiles.set(window, tileEntry);
+    }
+
+    _cancelPendingTile(window) {
+        const entry = this._pendingTiles?.get(window);
+        if (!entry) return;
+
+        if (entry.timeoutId) {
+            GLib.source_remove(entry.timeoutId);
+            entry.timeoutId = null;
+        }
+        if (entry.unmanagedId) {
+            window.disconnect(entry.unmanagedId);
+            entry.unmanagedId = null;
+        }
+        this._pendingTiles.delete(window);
     }
 
     disable() {
@@ -303,5 +374,21 @@ export default class SoloSpaceExtension extends Extension {
             this._pendingWindows.clear();
             this._pendingWindows = null;
         }
+
+        // Clean up any pending tile timeouts
+        if (this._pendingTiles) {
+            for (const [window, entry] of this._pendingTiles) {
+                if (entry.timeoutId) {
+                    GLib.source_remove(entry.timeoutId);
+                }
+                if (entry.unmanagedId) {
+                    window.disconnect(entry.unmanagedId);
+                }
+            }
+            this._pendingTiles.clear();
+            this._pendingTiles = null;
+        }
+
+        this._settings = null;
     }
 }

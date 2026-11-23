@@ -46,22 +46,22 @@ If you prefer to install manually:
 
 1. Create the extension directory:
    ```bash
-   mkdir -p ~/.local/share/gnome-shell/extensions/solospace@denhafiz.github.com
+   mkdir -p ~/.local/share/gnome-shell/extensions/solospace@denhafiz.my
    ```
 
 2. Copy the extension files:
    ```bash
-   cp extension.js metadata.json prefs.js -r schemas ~/.local/share/gnome-shell/extensions/solospace@denhafiz.github.com/
+   cp extension.js metadata.json prefs.js -r schemas ~/.local/share/gnome-shell/extensions/solospace@denhafiz.my/
    ```
 
 3. Compile the schemas:
    ```bash
-   glib-compile-schemas ~/.local/share/gnome-shell/extensions/solospace@denhafiz.github.com/schemas/
+   glib-compile-schemas ~/.local/share/gnome-shell/extensions/solospace@denhafiz.my/schemas/
    ```
 
 4. Enable the extension:
    ```bash
-   gnome-extensions enable solospace@denhafiz.github.com
+   gnome-extensions enable solospace@denhafiz.my
    ```
 
 ## 🛠 Compatibility
@@ -73,7 +73,10 @@ Solo Space is compatible with modern GNOME Shell versions:
 | **GNOME 45** | ✅ Supported |
 | **GNOME 46** | ✅ Supported |
 | **GNOME 47** | ✅ Supported |
+| **GNOME 48** | ✅ Supported |
+| **GNOME 49** | ✅ Supported |
 | **GNOME 50** | ✅ Supported |
+| **GNOME 51** | ✅ Supported |
 
 ## 🤝 Contributing
 
