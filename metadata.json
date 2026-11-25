@@ -12,5 +12,7 @@
     "51"
   ],
   "settings-schema": "org.gnome.shell.extensions.solospace",
-  "url": "https://github.com/DenHafiz69/solospace"
+  "url": "https://github.com/DenHafiz69/solospace",
+  "version": 1,
+  "version-name": "1.0.0"
 }
